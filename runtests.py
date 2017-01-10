@@ -28,7 +28,7 @@ import pygopherd.protocols.ProtocolMultiplexerTest
 import pygopherd.protocols.baseTest
 import pygopherd.protocols.rfc1436Test
 import pygopherd.protocols
-import pygopherd.handlers.ZIP
+#import pygopherd.handlers.ZIP
 
 def suite():
     tests = [initializationTest,
@@ -40,7 +40,7 @@ def suite():
              pygopherd.protocols.ProtocolMultiplexerTest,
              pygopherd.protocols.baseTest,
              pygopherd.protocols.rfc1436Test,
-	     pygopherd.handlers.ZIP
+#	     pygopherd.handlers.ZIP
         ]
     suite = unittest.TestSuite()
     for module in tests:

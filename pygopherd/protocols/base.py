@@ -16,7 +16,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import SocketServer
+import socketserver
 import re
 import os, stat, os.path, mimetypes
 from pygopherd import handlers, GopherExceptions, logger, gopherentry
@@ -36,8 +36,8 @@ class BaseGopherProtocol:
 
         config -- a ConfigParser object."""
 
-        self.request = request
-        requestparts = map(lambda arg: arg.strip(), request.split("\t"))
+        self.request = request.decode()
+        requestparts = [arg.strip() for arg in self.request.split("\t")]
         self.rfile = rfile
         self.wfile = wfile
         self.config = config
@@ -72,8 +72,8 @@ class BaseGopherProtocol:
         """Log a handled request."""
         logger.log("%s [%s/%s]: %s" % \
                    (self.requesthandler.client_address[0],
-                    re.search("[^.]+$", str(self.__class__)).group(0),
-                    re.search("[^.]+$", str(handler.__class__)).group(0),
+                    re.search(r"\.?([a-zA-Z0-9_]+)'>$", str(self.__class__)).group(1),
+                    re.search(r"\.?([a-zA-Z0-9_]+)'>$", str(handler.__class__)).group(1),
                     self.selector))
 
     def handle(self):
@@ -87,14 +87,14 @@ class BaseGopherProtocol:
                 self.writedir(self.entry, handler.getdirlist())
             else:
                 handler.write(self.wfile)
-        except GopherExceptions.FileNotFound, e:
-            self.filenotfound(str(e))
-        except IOError, e:
+        except GopherExceptions.FileNotFound as e:
+            self.filenotfound(e)
+        except IOError as e:
             GopherExceptions.log(e, self, None)
             self.filenotfound(e[1])
 
     def filenotfound(self, msg):
-        self.wfile.write("3%s\t\terror.host\t1\r\n" % msg)
+        self.wfile.write("3{}\t\terror.host\t1\r\n".format(msg).encode())
 
     def gethandler(self):
         """Gets the handler for this object's selector."""
@@ -108,7 +108,7 @@ class BaseGopherProtocol:
 
         startstr = self.renderdirstart(entry)
         if startstr != None:
-            self.wfile.write(startstr)
+            self.wfile.write(startstr.encode())
 
         abstractopt = self.config.get("pygopherd", "abstract_entries")
         doabstracts = abstractopt == 'always' or \
@@ -116,18 +116,18 @@ class BaseGopherProtocol:
                        not self.groksabstract())
 
         if self.config.getboolean("pygopherd", "abstract_headers"):
-            self.wfile.write(self.renderabstract(entry.getea('ABSTRACT', '')))
+            self.wfile.write(self.renderabstract(entry.getea('ABSTRACT', '')).encode())
 
         for direntry in dirlist:
-            self.wfile.write(self.renderobjinfo(direntry))
+            self.wfile.write(self.renderobjinfo(direntry).encode())
             if doabstracts:
                 abstract = self.renderabstract(direntry.getea('ABSTRACT'))
                 if abstract:
-                    self.wfile.write(abstract)
+                    self.wfile.write(abstract.encode())
 
         endstr = self.renderdirend(entry)
         if endstr != None:
-            self.wfile.write(endstr)
+            self.wfile.write(endstr.encode())
 
     def renderabstract(self, abstractstring):
         if not abstractstring:

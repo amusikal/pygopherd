@@ -16,7 +16,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import SocketServer
+import socketserver
 import re
 import os, stat, os.path, mimetypes, time
 from pygopherd import handlers, protocols, GopherExceptions
@@ -60,18 +60,18 @@ class GopherPlusProtocol(GopherProtocol):
             self.entry = handler.getentry()
             
             if self.handlemethod == 'infoonly':
-                self.wfile.write("+-2\r\n")
-                self.wfile.write(self.renderobjinfo(self.entry))
+                self.wfile.write(b"+-2\r\n")
+                self.wfile.write(self.renderobjinfo(self.entry).encode())
             else:
                 handler.prepare()
-                self.wfile.write("+" + str(self.entry.getsize(-2)) + "\r\n")
+                self.wfile.write(b"+" + bytes(self.entry.getsize(-2)) + b"\r\n")
                 if handler.isdir():
                     self.writedir(self.entry, handler.getdirlist())
                 else:
                     handler.write(self.wfile)
-        except GopherExceptions.FileNotFound, e:
+        except GopherExceptions.FileNotFound as e:
             self.filenotfound(str(e))
-        except IOError, e:
+        except IOError as e:
             GopherExceptions.log(e, self, None)
             self.filenotfound(e[1])
 
@@ -79,7 +79,7 @@ class GopherPlusProtocol(GopherProtocol):
         # Return the always-supported values PLUS any extra ones for
         # this particular entry.
         return ['+INFO', '+ADMIN', '+VIEWS'] + \
-               ['+' + x for x in entry.geteadict().keys()]
+               ['+' + x for x in list(entry.geteadict().keys())]
 
     def getallblocks(self, entry):
         retstr = ''
@@ -93,7 +93,7 @@ class GopherPlusProtocol(GopherProtocol):
         # Incoming block: +VIEWS
         blockname = block[1:].lower()
 
-        if entry.geteadict().has_key(blockname.upper()):
+        if blockname.upper() in entry.geteadict():
             return "+" + blockname.upper() + ":\r\n" + \
                    ''.join(
                            [" " + x + "\r\n" for x in \
@@ -150,10 +150,10 @@ class GopherPlusProtocol(GopherProtocol):
             return self.getallblocks(entry)
 
     def filenotfound(self, msg):
-        self.wfile.write("--2\r\n")
-        self.wfile.write("1 ")
-        self.wfile.write(self.config.get("protocols.gopherp.GopherPlusProtocol", "admin"))
-        self.wfile.write("\r\n" + msg + "\r\n")
+        self.wfile.write(b"--2\r\n")
+        self.wfile.write(b"1 ")
+        self.wfile.write(self.config.get("protocols.gopherp.GopherPlusProtocol", "admin").encode())
+        self.wfile.write(b"\r\n" + msg.encode() + b"\r\n")
 
     def groksabstract(self):
         return 1

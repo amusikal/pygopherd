@@ -27,12 +27,12 @@ def log(exception, protocol = None, handler = None):
     protostr = 'None'
     handlerstr = 'None'
     ipaddr = 'unknown-address'
-    exceptionclass = re.search("[^.]+$", str(exception.__class__)).group(0)
-    if protocol:
-        protostr = re.search("[^.]+$", str(protocol.__class__)).group(0)
+    exceptionclass = re.search(r"\.?([a-zA-Z0-9_]+)'>$", str(exception.__class__)).group(1)
+    if protocol and type(protocol) != str:
+        protostr = re.search(r"\.?([a-zA-Z0-9_]+)'>$", str(protocol.__class__)).group(1)
         ipaddr = protocol.requesthandler.client_address[0]
     if handler:
-        handlerstr = re.search("[^.]+$", str(handler.__class__)).group(0)
+        handlerstr = re.search(r"\.?([a-zA-Z0-9_]+)'>$", str(handler.__class__)).group(1)
     
     logger.log("%s [%s/%s] EXCEPTION %s: %s" % \
                (ipaddr, protostr, handlerstr, exceptionclass,
@@ -42,13 +42,13 @@ def init(backtraceenabled):
     global tracebacks
     tracebacks = backtraceenabled
 
-class FileNotFound:
+class FileNotFound(BaseException):
     def __init__(self, arg):
         self.selector = arg
         self.comments = ''
         self.protocol = ''
 
-        if type(arg) != types.StringType:
+        if type(arg) != str:
             self.selector = arg[0]
             self.comments = arg[1]
             if len(arg) > 2 and arg[2]:

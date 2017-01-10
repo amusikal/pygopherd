@@ -16,9 +16,9 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import SocketServer
+import socketserver
 import re
-import os, stat, os.path, mimetypes, urllib
+import os, stat, os.path, mimetypes, urllib.request, urllib.parse, urllib.error
 
 mapping = None
 eaexts = None
@@ -174,13 +174,14 @@ class GopherEntry:
             from pygopherd.handlers.base import VFS_Real
             vfs = VFS_Real(self.config)
 
-        for extension, blockname in eaexts.items():
-            if self.ea.has_key(blockname):
+        for extension, blockname in list(eaexts.items()):
+            if blockname in self.ea:
                 continue
             try:
                 rfile = vfs.open(selector + extension, "rt")
                 self.setea(blockname, "\n".join(
                            [x.rstrip() for x in rfile.readlines(20480)]))
+                rfile.close()
             except IOError:
                 pass
                          
@@ -285,7 +286,7 @@ class GopherEntry:
             
         retval = 'gopher://%s:%d/' % (self.gethost(defaulthost),
                                       self.getport(defaultport))
-        retval += urllib.quote('%s%s' % (self.gettype(), self.getselector()))
+        retval += urllib.parse.quote('%s%s' % (self.gettype(), self.getselector()))
         return retval
 
     def getnum(self, default = None):
@@ -303,7 +304,7 @@ class GopherEntry:
         self.gopherpsupport = arg
 
     def getea(self, name, default = None):
-        if self.ea.has_key(name):
+        if name in list(self.ea.keys()):
             return self.ea[name]
         return default
 

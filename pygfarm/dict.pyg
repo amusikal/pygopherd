@@ -74,7 +74,7 @@ class TopMenu(PYGMain):
         for item in intro:
             self.entries.append(getinfoentry(item, self.config))
 
-        items = self.db.getdbdescs().items()
+        items = list(self.db.getdbdescs().items())
         items.sort(lambda x, y: cmp(x[1], y[1]))
 
         for name, desc in items:
@@ -253,7 +253,7 @@ class Definition(PYGMain):
         self.definition += "dict.pyg and Pygopherd licensed under the GPL.\n"
 
     def write(self, wfile):
-        wfile.write(self.definition)
+        wfile.write(self.definition.encode())
 
     def getentry(self):
         entry = GopherEntry(self.selector, self.config)
@@ -319,7 +319,7 @@ class MatchMenu(PYGMain):
         self.entries.append(getinfoentry("Advanced Search: " + self.dbname,
                                          self.config))
 
-        for name, desc in self.conn.getstratdescs().items():
+        for name, desc in list(self.conn.getstratdescs().items()):
             selector = self.genargsselector("/%s/MATCH/%s" % \
                                             (self.dbname, name))
             entry = GopherEntry(selector, self.config)
@@ -342,8 +342,8 @@ class DBInfo(PYGMain):
         self.infotext = self.db.getinfo()
 
     def write(self, wfile):
-        wfile.write("About %s (%s):\n\n" % (self.dbname, self.db.getdescription()))
-        wfile.write(self.infotext)
+        wfile.write("About {} ({}):\n\n" .format(self.dbname, self.db.getdescription()).encode())
+        wfile.write(self.infotext.encode())
 
     def getentry(self):
         entry = GopherEntry(self.selector, self.config)
@@ -358,7 +358,7 @@ def unique(input):
     retval = []
     check  = {}
     for item in input:
-        if not check.has_key(item.lower()):
+        if not item.lower() in list(check.keys()):
             retval.append(item)
             check[item.lower()] = 1
     return retval

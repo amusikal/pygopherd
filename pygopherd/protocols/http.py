@@ -17,9 +17,9 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import SocketServer
+import socketserver
 import re, binascii
-import os, stat, os.path, mimetypes, urllib, time
+import os, stat, os.path, mimetypes, urllib.request, urllib.parse, urllib.error, time
 from pygopherd import handlers, protocols, GopherExceptions
 from pygopherd.protocols.base import BaseGopherProtocol
 import pygopherd.version
@@ -27,7 +27,7 @@ import cgi
 
 class HTTPProtocol(BaseGopherProtocol):
     def canhandlerequest(self):
-        self.requestparts = map(lambda arg: arg.strip(), self.request.split(" "))
+        self.requestparts = [arg.strip() for arg in self.request.split(" ")]
         return len(self.requestparts) == 3 and \
                (self.requestparts[0] == 'GET' or self.requestparts[0] == 'HEAD') and \
                self.requestparts[2][0:5] == 'HTTP/'
@@ -59,26 +59,26 @@ class HTTPProtocol(BaseGopherProtocol):
         self.headerslurp()
         splitted = self.requestparts[1].split('?')
         self.selector = splitted[0]
-        self.selector = urllib.unquote(self.selector)
+        self.selector = urllib.parse.unquote(self.selector)
 
         self.selector = self.slashnormalize(self.selector)
         self.formvals = {}
         if len(splitted) >= 2:
             self.formvals = cgi.parse_qs(splitted[1])
 
-        if self.formvals.has_key('searchrequest'):
+        if 'searchrequest' in list(self.formvals.keys()):
             self.searchrequest = self.formvals['searchrequest'][0]
 
         icon = re.match('/PYGOPHERD-HTTPPROTO-ICONS/(.+)$', self.selector)
         if icon:
             iconname = icon.group(1)
-            if icons.has_key(iconname):
-                self.wfile.write("HTTP/1.0 200 OK\r\n")
-                self.wfile.write("Last-Modified: Fri, 14 Dec 2001 21:19:47 GMT\r\n")
-                self.wfile.write("Content-Type: image/gif\r\n\r\n")
+            if iconname in list(icons.keys()):
+                self.wfile.write(b"HTTP/1.0 200 OK\r\n")
+                self.wfile.write(b"Last-Modified: Fri, 14 Dec 2001 21:19:47 GMT\r\n")
+                self.wfile.write(b"Content-Type: image/gif\r\n\r\n")
                 if self.requestparts[0] == 'HEAD':
                     return
-                self.wfile.write(binascii.unhexlify(icons[iconname]))
+                self.wfile.write(binascii.unhexlify(icons[iconname]).encode())
                 return
 
         try:
@@ -86,22 +86,22 @@ class HTTPProtocol(BaseGopherProtocol):
             self.log(handler)
             self.entry = handler.getentry()
             handler.prepare()
-            self.wfile.write("HTTP/1.0 200 OK\r\n")
+            self.wfile.write(b"HTTP/1.0 200 OK\r\n")
             if self.entry.getmtime() != None:
                 gmtime = time.gmtime(self.entry.getmtime())
                 mtime = time.strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime)
-                self.wfile.write("Last-Modified: " + mtime + "\r\n")
+                self.wfile.write(b"Last-Modified: " + mtime.encode() + b"\r\n")
             mimetype = self.entry.getmimetype()
             mimetype = self.adjustmimetype(mimetype)
-            self.wfile.write("Content-Type: " + mimetype + "\r\n\r\n")
+            self.wfile.write(b"Content-Type: " + mimetype.encode() + b"\r\n\r\n")
             if self.requestparts[0] == 'GET':
                 if handler.isdir():
                     self.writedir(self.entry, handler.getdirlist())
                 else:
                     self.handlerwrite(self.wfile)
-        except GopherExceptions.FileNotFound, e:
+        except GopherExceptions.FileNotFound as e:
             self.filenotfound(str(e))
-        except IOError, e:
+        except IOError as e:
             GopherExceptions.log(e, self, None)
             self.filenotfound(e[1])
 
@@ -124,7 +124,7 @@ class HTTPProtocol(BaseGopherProtocol):
             url = re.match('(/|)URL:(.+)$', entry.getselector()).group(2)
         elif (not entry.gethost()) and (not entry.getport()):
             # It's a link to our own server.  Make it as such.  (relative)
-            url = urllib.quote(entry.getselector())
+            url = urllib.parse.quote(entry.getselector())
         else:
             # Link to a different server.  Make it a gopher URL.
             url = entry.geturl(self.server.server_name, 70)
@@ -187,18 +187,18 @@ class HTTPProtocol(BaseGopherProtocol):
         return retstr + "\n</BODY></HTML>\n"
 
     def filenotfound(self, msg):
-        self.wfile.write("HTTP/1.0 404 Not Found\r\n")
-        self.wfile.write("Content-Type: text/html\r\n\r\n")
-        self.wfile.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">')
-        self.wfile.write("""\n<HTML><HEAD><TITLE>Selector Not Found</TITLE>
+        self.wfile.write(b"HTTP/1.0 404 Not Found\r\n")
+        self.wfile.write(b"Content-Type: text/html\r\n\r\n")
+        self.wfile.write(b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">')
+        self.wfile.write(b"""\n<HTML><HEAD><TITLE>Selector Not Found</TITLE>
         <H1>Selector Not Found</H1>
         <TT>""")
-        self.wfile.write(cgi.escape(msg))
-        self.wfile.write("</TT><HR>Pygopherd</BODY></HTML>\n")
+        self.wfile.write(cgi.escape(msg).encode())
+        self.wfile.write(b"</TT><HR>Pygopherd</BODY></HTML>\n")
 
     def getimgtag(self, entry):
         name = 'generic.gif'
-        if self.iconmapping.has_key(entry.gettype()):
+        if entry.gettype() in list(self.iconmapping.keys()):
             name = self.iconmapping[entry.gettype()]
         return '<IMG ALT=" * " SRC="%s" WIDTH="20" HEIGHT="22" BORDER="0">' % \
                    ('/PYGOPHERD-HTTPPROTO-ICONS/' + name)
