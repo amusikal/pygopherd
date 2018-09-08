@@ -19,6 +19,7 @@
 import socketserver
 import re
 import os, stat, os.path, mimetypes, urllib.request, urllib.parse, urllib.error
+import ast
 
 mapping = None
 eaexts = None
@@ -99,7 +100,7 @@ class GopherEntry:
         If no mimetype can be found, it will be set to the default
         from the config file.  If no gopher0 type character is already present,
         self.guesstype() will be called to set it."""
-        
+
         self.fspath = fspath
         if vfs == None:
             from pygopherd.handlers.base import VFS_Real
@@ -159,7 +160,7 @@ class GopherEntry:
     def guesstype(self):
         global mapping
         if not mapping:
-            mapping = eval(self.config.get("GopherEntry", "mapping"))
+            mapping = ast.literal_eval(self.config.get("GopherEntry", "mapping"))
         for maprule in mapping:
             if re.match(maprule[0], self.mimetype):
                 return maprule[1]
@@ -169,7 +170,7 @@ class GopherEntry:
         """Handle getting extended attributes from the filesystem."""
         global eaexts
         if eaexts == None:
-            eaexts = eval(self.config.get("GopherEntry", "eaexts"))
+            eaexts = ast.literal_eval(self.config.get("GopherEntry", "eaexts"))
         if vfs == None:
             from pygopherd.handlers.base import VFS_Real
             vfs = VFS_Real(self.config)
@@ -184,7 +185,7 @@ class GopherEntry:
                 rfile.close()
             except IOError:
                 pass
-                         
+
 
     def getselector(self, default = None):
         if self.selector == None:
@@ -274,7 +275,7 @@ class GopherEntry:
         return default
     def setpopulated(self, arg):
         self.populated = arg
-    
+
     def geturl(self, defaulthost = 'MISSINGHOST', defaultport = 70):
         """If this selector is a URL: one, then we just return the rest of
         it.  Otherwise, generate a gopher:// URL and quote it."""

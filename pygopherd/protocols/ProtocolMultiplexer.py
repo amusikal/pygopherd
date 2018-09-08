@@ -19,10 +19,11 @@
 from pygopherd import handlers, protocols
 from pygopherd.protocols import *
 from pygopherd.GopherExceptions import FileNotFound
+import ast
 import re
 
 def getProtocol(request, server, requesthandler, rfile, wfile, config):
-    p = eval(config.get("protocols.ProtocolMultiplexer", "protocols"))
+    p = ast.literal_eval(config.get("protocols.ProtocolMultiplexer", "protocols"))
 
     for protocol in p:
         ptry = protocol(request, server, requesthandler, rfile, wfile, config)

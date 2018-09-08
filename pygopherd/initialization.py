@@ -32,6 +32,7 @@ from pygopherd.handlers import HandlerMultiplexer
 import pygopherd.fileext
 import mimetypes
 
+import ast
 import traceback
 
 
@@ -60,7 +61,7 @@ def initmimetypes(config):
         raise Exception(errmsg)
 
 
-    configencoding = eval(config.get("pygopherd", "encoding"))
+    configencoding = ast.literal_eval(config.get("pygopherd", "encoding"))
     mimetypes.encodings_map.clear()
     for key, value in configencoding:
         mimetypes.encodings_map[key] = value
@@ -94,7 +95,7 @@ class GopherRequestHandler(socketserver.StreamRequestHandler):
 def getserverobject(config):
     # Pick up the server type from the config.
 
-    servertype = eval("socketserver." + config.get("pygopherd", "servertype"))
+    servertype = ast.literal_eval("socketserver." + config.get("pygopherd", "servertype"))
 
     class MyServer(servertype):
         allow_reuse_address = 1
@@ -212,4 +213,3 @@ def initeverything(conffile):
 
     logger.log("Running.  Root is '%s'" % config.get("pygopherd", "root"))
     return s
-

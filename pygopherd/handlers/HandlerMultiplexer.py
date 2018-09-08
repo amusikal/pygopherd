@@ -19,6 +19,7 @@
 from pygopherd import GopherExceptions, logger
 from pygopherd.handlers import *
 import os, re
+import ast
 
 handlers = None
 rootpath = None
@@ -34,7 +35,7 @@ def getHandler(selector, searchrequest, protocol, config, handlerlist = None,
         vfs = VFS_Real(config)
 
     if not handlers:
-        handlers = eval(config.get("handlers.HandlerMultiplexer",
+        handlers = ast.literal_eval(config.get("handlers.HandlerMultiplexer",
                                    "handlers"))
         rootpath = config.get("pygopherd", "root")
     if handlerlist == None:

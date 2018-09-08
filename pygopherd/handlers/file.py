@@ -23,6 +23,7 @@ from pygopherd import protocols, gopherentry
 from pygopherd.handlers import base
 import pygopherd.pipe
 from stat import *
+import ast
 
 class FileHandler(base.BaseHandler):
     def canhandlerequest(self):
@@ -69,12 +70,12 @@ class CompressedFileHandler(FileHandler):
                 self.entry.encoding = None
                 self.entry.type = self.entry.guesstype()
         return self.entry
-    
+
     def initdecompressors(self):
         global decompressors, decompresspatt
         if decompressors == None:
             decompressors = \
-                eval(self.config.get("handlers.file.CompressedFileHandler",
+                ast.literal_eval(self.config.get("handlers.file.CompressedFileHandler",
                                      "decompressors"))
             decompresspatt = \
                 self.config.get("handlers.file.CompressedFileHandler",

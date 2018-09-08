@@ -24,6 +24,7 @@ from pygopherd import handlers, protocols, GopherExceptions
 from pygopherd.protocols.base import BaseGopherProtocol
 import pygopherd.version
 import cgi
+import ast
 
 class HTTPProtocol(BaseGopherProtocol):
     def canhandlerequest(self):
@@ -53,7 +54,7 @@ class HTTPProtocol(BaseGopherProtocol):
 
     def handle(self):
         self.canhandlerequest()         # To get self.requestparts
-        self.iconmapping = eval(self.config.get("protocols.http.HTTPProtocol",
+        self.iconmapping = ast.literal_eval(self.config.get("protocols.http.HTTPProtocol",
                                                 "iconmapping"))
 
         self.headerslurp()
@@ -105,7 +106,7 @@ class HTTPProtocol(BaseGopherProtocol):
             GopherExceptions.log(e, self, None)
             self.filenotfound(e[1])
 
-    def handlerwrite(self, wfile):                                
+    def handlerwrite(self, wfile):
         self.handler.write(wfile)
 
     def adjustmimetype(self, mimetype):

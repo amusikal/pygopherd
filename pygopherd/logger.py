@@ -1,4 +1,5 @@
 import sys
+import ast
 
 log = None
 logfile = sys.stdout
@@ -26,8 +27,8 @@ def init(config):
     logmethod = config.get("logger", "logmethod")
     if logmethod == "syslog":
         import syslog
-        priority = eval("syslog." + config.get("logger", "priority"))
-        facility = eval("syslog." + config.get("logger", "facility"))
+        priority = ast.literal_eval("syslog." + config.get("logger", "priority"))
+        facility = ast.literal_eval("syslog." + config.get("logger", "facility"))
         syslog.openlog('pygopherd', syslog.LOG_PID, facility)
         syslogfunc = syslog.syslog
         log = log_syslog
